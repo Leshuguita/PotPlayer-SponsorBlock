@@ -1,5 +1,6 @@
 # SponsorBlock for PotPlayer
  Modified version of the default PotPlayer YouTube extension that adds [SponsorBlock](https://sponsor.ajay.app/) segments as Chapters.
+ For this, I had to replace the default YouTube chapters, as they also use the bookmarks/chapters, and would interfere with skipping.
 
  There's no support for submitting segments, as I don't know if it's even possible with the extension API. Help for this would be greatly appreciated.
 
