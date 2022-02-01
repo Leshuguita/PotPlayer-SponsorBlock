@@ -20,3 +20,6 @@
  - SB - Preview
  - SB - No Music
  - SB - Non-essential Filler
+
+## Issues
+If you come across any bugs or problems, or have any ideas on how to improve this, please feel free to open an issue!
