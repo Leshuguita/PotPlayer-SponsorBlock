@@ -1968,6 +1968,11 @@ string PlayitemParse(const string &in path, dictionary &MetaData, array<dictiona
 
 						array<string> readableCats = {"Sponsor", "Self Promotion", "Interaction Reminder", "Intro", "Outro", "Preview", "No Music", "Non-essential Filler"};
 
+						dictionary firstItem;
+						firstItem["title"] = "Video";
+						firstItem["time"] = "0";
+						chapt.insertLast(firstItem);
+
 						for(int j = 0, len = root.size(); j < len; j++)
 						{
 							JsonValue chapter = root[j];
@@ -1979,12 +1984,12 @@ string PlayitemParse(const string &in path, dictionary &MetaData, array<dictiona
 									dictionary startItem;
 									int categoryId = int(typesToId[chapter["category"].asString()]);
 									startItem["title"] = "SB - " + readableCats[categoryId];
-									startItem["time"] = (segment[0].asFloat() * 1000) + "";
+									startItem["time"] = formatFloat((segment[0].asFloat() * 1000), "", 32, 0);
 									chapt.insertLast(startItem);
 
 									dictionary endItem;
 									endItem["title"] = "Video";
-									endItem["time"] = (segment[1].asFloat() * 1000) + "";
+									endItem["time"] = string("" + formatFloat((segment[1].asFloat() * 1000), "", 32, 0));
 									chapt.insertLast(endItem);
 								}
 							}
