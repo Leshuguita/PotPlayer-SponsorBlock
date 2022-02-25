@@ -1057,7 +1057,7 @@ string PlayitemParse(const string &in path, dictionary &MetaData, array<dictiona
 		}
 
 		string error_message;
-		string player_response_jsonData, player_chapter_jsonData;
+		string player_response_jsonData, player_chapter_jsonData, player_sponsors_jsonData;
 		for (int i = 0; i < 2; i++)
 		{
 			string json = HostUrlDecode(GetVideoJson(videoId, i == 1));
@@ -1098,7 +1098,13 @@ string PlayitemParse(const string &in path, dictionary &MetaData, array<dictiona
 		}
 		if (player_response_jsonData.empty()) player_response_jsonData = GetJsonCode(WebData, MATCH_PLAYER_RESPONSE_2);
 
-		player_chapter_jsonData = HostUrlGetString("https://sponsor.ajay.app/api/skipSegments?categories=[\"sponsor\", \"selfpromo\",\"interaction\", \"intro\", \"outro\", \"preview\", \"music_offtopic\", \"filler\"]&videoID=" + videoId);
+		player_sponsors_jsonData = HostUrlGetString("https://sponsor.ajay.app/api/skipSegments?categories=[\"sponsor\", \"selfpromo\",\"interaction\", \"intro\", \"outro\", \"preview\", \"music_offtopic\", \"filler\"]&videoID=" + videoId);
+		player_sponsors_jsonData.replace("\\/", "/");
+		// player_sponsors_jsonData.replace("\\\"", "\"");
+		player_sponsors_jsonData.replace("\\\\", "\\");
+
+		player_chapter_jsonData = GetJsonCode(WebData, MATCH_CHAPTER_RESPONSE);
+		if (player_chapter_jsonData.empty()) player_chapter_jsonData = GetJsonCode(WebData, MATCH_CHAPTER_RESPONSE2);
 		player_chapter_jsonData.replace("\\/", "/");
 		// player_chapter_jsonData.replace("\\\"", "\"");
 		player_chapter_jsonData.replace("\\\\", "\\");
@@ -1945,16 +1951,61 @@ string PlayitemParse(const string &in path, dictionary &MetaData, array<dictiona
 				}
 				if (!subtitle.empty() && (@QualityList !is null)) MetaData["subtitle"] = subtitle;
 
-				if ((@QualityList !is null) && !player_chapter_jsonData.empty())
+				// Chapters
+				if ((@QualityList !is null) && (!player_sponsors_jsonData.empty() || !player_chapter_jsonData.empty()))
 				{
 					JsonReader reader;
-					JsonValue root;
+					JsonValue sponsorsRoot;
+					JsonValue ytRoot;
 
-					if (reader.parse(player_chapter_jsonData, root) && root.isArray())
+					array<dictionary> ytChapt;
+					array<dictionary> spChapt;
+
+					// Youtube Chapters
+					if (reader.parse(player_chapter_jsonData, ytRoot) && ytRoot.isObject())
 					{
-						array<dictionary> chapt;
+						JsonValue chapters = ytRoot["chapters"];
 
-						// Apparently string dictionaries are not a thing??
+						if (chapters.isArray())
+						{
+							for(int j = 0, len = chapters.size(); j < len; j++)
+							{
+								JsonValue chapter = chapters[j];
+
+								if (chapter.isObject())
+								{
+									JsonValue chapterRenderer = chapter["chapterRenderer"];
+
+									if (chapterRenderer.isObject())
+									{
+										JsonValue title = chapterRenderer["title"];
+
+										if (title.isObject())
+										{
+											JsonValue simpleText = title["simpleText"];
+											JsonValue timeRangeStartMillis = chapterRenderer["timeRangeStartMillis"];
+
+											if (simpleText.isString() && timeRangeStartMillis.isInt())
+											{
+												dictionary item;
+
+												item["title"] = simpleText.asString();
+												item["time"] = timeRangeStartMillis.asInt();
+												ytChapt.insertLast(item);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+
+					// Sponsors
+					if (reader.parse(player_sponsors_jsonData, sponsorsRoot) && sponsorsRoot.isArray())
+					{
+
+
+						// Apparently declaring string dictionaries is not a thing??
 						dictionary typesToId = {
 							{"sponsor", 0},
 							{"selfpromo", 1},
@@ -1968,35 +2019,52 @@ string PlayitemParse(const string &in path, dictionary &MetaData, array<dictiona
 
 						array<string> readableCats = {"Sponsor", "Self Promotion", "Interaction Reminder", "Intro", "Outro", "Preview", "No Music", "Non-essential Filler"};
 
-						dictionary firstItem;
-						firstItem["title"] = "Video";
-						firstItem["time"] = "0";
-						chapt.insertLast(firstItem);
-
-						for(int j = 0, len = root.size(); j < len; j++)
+						for(int j = 0, len = sponsorsRoot.size(); j < len; j++)
 						{
-							JsonValue chapter = root[j];
+							JsonValue chapter = sponsorsRoot[j];
 
 							if (chapter.isObject())
 							{
 								JsonValue segment = chapter["segment"];
 								if (segment.isArray()) {
 									dictionary startItem;
-									int categoryId = int(typesToId[chapter["category"].asString()]);
-									startItem["title"] = "SB - " + readableCats[categoryId];
-									startItem["time"] = formatFloat((segment[0].asFloat() * 1000), "", 32, 0);
-									chapt.insertLast(startItem);
-
 									dictionary endItem;
-									endItem["title"] = "Video";
-									endItem["time"] = string("" + formatFloat((segment[1].asFloat() * 1000), "", 32, 0));
-									chapt.insertLast(endItem);
+
+									startItem["time"] = segment[0].asFloat() * 1000;
+									endItem["time"] = segment[1].asFloat() * 1000;
+
+									string startChapterName = getChapterName(ytChapt, int(startItem["time"]));
+									string endChapterName = getChapterName(ytChapt, int(endItem["time"]));
+
+									int categoryId = int(typesToId[chapter["category"].asString()]);
+									startItem["title"] = (startChapterName != "" ? startChapterName + " | " : "") + "SB - " + readableCats[categoryId];
+
+									endItem["title"] = endChapterName == "" ? "Video" : endChapterName;
+
+									spChapt.insertLast(startItem);
+									spChapt.insertLast(endItem);
 								}
 							}
 						}
-
-						if (!chapt.empty() && (@QualityList !is null)) MetaData["chapter"] = chapt;
 					}
+
+					array<dictionary> chapt;
+
+					for (int i = 0; i < ytChapt.length(); i++) {
+						string sponsor = getChapterName(spChapt, int(ytChapt[i]["time"]));
+						if (sponsor.findFirst("SB -") > 0) {
+							ytChapt[i]["title"] = string(ytChapt[i]["title"]) + " | " + sponsor;
+						}
+						ytChapt[i]["time"] = formatFloat(float(ytChapt[i]["time"]), "", 32, 0);
+						chapt.insertLast(ytChapt[i]);
+					}
+					for (int i = 0; i < spChapt.length(); i++) {
+						spChapt[i]["time"] = formatFloat(float(spChapt[i]["time"]), "", 32, 0);
+						chapt.insertLast(spChapt[i]);
+					}
+
+					if (!chapt.empty() && (@QualityList !is null)) MetaData["chapter"] = chapt;
+
 				}
 			}
 
@@ -2005,6 +2073,17 @@ string PlayitemParse(const string &in path, dictionary &MetaData, array<dictiona
 		}
 	}
 	return "";
+}
+
+string getChapterName(array<dictionary> chapters, int time) {
+	string name = "";
+	for (int i = 0; i < chapters.length(); i++) {
+		if (int(chapters[i]["time"]) <= time && (i >= chapters.length() - 1 ? true : int(chapters[i+1]["time"]) > time)) {
+			name = string(chapters[i]["title"]);
+			break;
+		}
+	}
+	return name;
 }
 
 bool PlaylistCheck(const string &in path)
