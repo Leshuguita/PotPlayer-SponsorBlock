@@ -11,7 +11,7 @@
  To use as the default when opening youtube URLs, go to  `Preferences (F5) > Extensions > Media Playlist/Playitem` and move it above the default.
 
 ### Skipping
- To choose what types of segments to skip, go to `PotPlayer (or right rlick) menu > Playback > Skip > Skip Setup`, tick "Enable skip feature" and "Chapter title(s)", and add the desired types to the list, separated by semicolons. If the title of the chapters includes any of the strings in the list (case insensitive), it will be skipped. The chapter titles are:
+ To choose what types of segments to skip, go to `PotPlayer (or right click) menu > Playback > Skip > Skip Setup`, tick "Enable skip feature" and "Chapter title(s)", and add the desired types to the list, separated by semicolons. If the title of the chapters includes any of the strings in the list (case insensitive), it will be skipped. The chapter titles are:
  - SB - Sponsor
  - SB - Self Promotion
  - SB - Interaction Reminder
