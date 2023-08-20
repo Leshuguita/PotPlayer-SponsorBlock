@@ -1,7 +1,12 @@
 # NOT MANTAINED ANYMORE!
 I stopped using PotPlayer, and so have no need for this anymore.
+
 I believe Alexey17's fork is mantained, [here](https://github.com/Alexey71/PotPlayer-SponsorBlock).
+
 There's also a fix for a bitrate issue in an [issue](https://github.com/Leshuguita/PotPlayer-SponsorBlock/issues/1), if you only need that.
+
+
+## Original README:
 
 # SponsorBlock for PotPlayer
  Modified version of the default PotPlayer YouTube extension that adds [SponsorBlock](https://sponsor.ajay.app/) segments as Chapters.
