@@ -3,8 +3,7 @@ I stopped using PotPlayer, and so have no need for this anymore.
 
 I believe Alexey17's fork is mantained, [here](https://github.com/Alexey71/PotPlayer-SponsorBlock).
 
-There's also a fix for a bitrate issue in an [issue](https://github.com/Leshuguita/PotPlayer-SponsorBlock/issues/1), if you only need that.
-
+In case you're curious, I now use [MPV](https://github.com/mpv-player/mpv) with the [uosc](https://github.com/tomasklaen/uosc), [thumbfast](https://github.com/po5/thumbfast) and [mpv_sponsorblock](https://github.com/po5/mpv_sponsorblock) scripts
 
 ## Original README:
 
